@@ -3,6 +3,7 @@ from kivymd.theming import ThemeManager
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.floatlayout import MDFloatLayout
+from kivymd.uix.stacklayout import MDStackLayout
 from kivymd.uix.navigationdrawer import NavigationLayout, MDNavigationDrawer, MDToolbar
 from kivymd.uix.card import MDCard, MDSeparator
 from kivymd.uix.screen import Screen
@@ -30,8 +31,20 @@ username = "root_system0"
 password = "random.random()"
 
 
-class cardButton(MDCard, Button):
-    pass
+class AcCard(MDCard):
+    def __init__(self, size, **kwargs):
+        super().__init__(**kwargs)
+        self.orientation = 'vertical'
+        self.padding = '5dp'
+        self.pos_hint = {'center_x' : 0.5, 'center_y' : 0.5}
+        self.size_hint = size
+        self.radius = [4] * 4
+        self.md_bg_color = app.off_red
+
+        self.build()
+
+    def build(self):
+        self.add_widget(Image(source='static/ac1.png'))
 
 
 class Room(MDBoxLayout):
@@ -47,46 +60,30 @@ class Room(MDBoxLayout):
         # AC region
         self.timer = 0
         new_layout = MDFloatLayout()
-        self.new_card = MDCard(
-            orientation='vertical',
-            padding='10dp',
-            pos_hint={'center_x': 0.5, 'center_y': 0.5},
-            size_hint=(0.75, 0.75),
-        )
-        self.new_card.md_bg_color = app.off_red
-        ac_image = Image(
-            source='static/ac1.png',
-        )
-        ac_image.size_hint_y = 0.9
-        
-        ac_image.pos_hint = {'top': 1.0, 'center_x' : 0.5}
-        self.new_card.radius = [4] * 4
+        self.new_card = AcCard((0.75, 0.75))
 
-        # ac_button.bind(active=callback)
-        self.new_card.add_widget(ac_image)
+        # Details
+        details_box = MDGridLayout(size_hint_y = 0.25)
+        details_box.cols = 1
+        self.temperature_label = MDLabel(text='18°C', pos_hint={'center_x' : 0.5})
+        self.temperature_label.font_size = 20
+        self.temperature_label.size = (0.25, 1)
+        self.temperature_label.color = [1, 1, 1, 1]
+        details_box.add_widget(self.temperature_label)
+        self.new_card.add_widget(details_box)
+
         self.new_card.on_press = self.ac_touch_down
         self.new_card.on_release = self.ac_touch_up
-        temp = MDLabel(text='18ºC')
-        temp.font_size = 10
-        temp.size = (0.25, 1)
-        temp.color = [1, 1, 1, 1]
         new_layout.add_widget(self.new_card)
         screen_layout.add_widget(new_layout)
 
-        
+        # AC POPUP
+        #--------------------------------#
         popup_layout = MDGridLayout()
-
-        # AC image
-        self.image_box = MDBoxLayout(orientation='vertical')
         popup_layout.cols = 1
-        ac_image1 = Image(
-            source='static/ac1.png',
-            size_hint=(0.9, 0.9),
-        )
-        ac_image1.pos_hint = {'top' : 1}
-        self.image_box.size_hint = (0.5, 0.5)
-        self.image_box.add_widget(ac_image1)
-        self.image_box.add_widget(MDLabel(text='18ºC'))
+
+        
+        self.image_box = AcCard((0.5, 0.5))
         popup_layout.add_widget(self.image_box)
 
 
@@ -98,7 +95,7 @@ class Room(MDBoxLayout):
         new_box_layout = MDFloatLayout()
         dec_button = MDCard(
             orientation='vertical',
-            padding='10dp',
+            padding='5dp',
             pos_hint={'center_x': 0.5, 'center_y': 0.5},
             size_hint=(0.75, 0.75),
         )
@@ -136,7 +133,6 @@ class Room(MDBoxLayout):
         )
         self.ac_popup.content = popup_layout
         self.ac_popup.background_color = [i / 255 for i in [137, 205, 211]] + [1]
-        self.ac_popup.on_open = self.faltu
 
         #--------------------------------------------------------------#
 
@@ -169,19 +165,21 @@ class Room(MDBoxLayout):
         screen_layout.add_widget(Button(text='TODO'))
         self.add_widget(screen_layout)
 
-    def faltu(self, *args):
-        self.image_box.md_bg_color = self.new_card.md_bg_color
-
     def ac_touch_down(self, *args):
         self.timer = time()
         
     
-    def ac_touch_up(self, *args):
-        if (time() - self.timer > 0.5):
+    def ac_touch_up(self, popup = False, *args):
+        if (time() - self.timer > 0.5) and not popup:
             self.ac_popup.open()
         else:
-            app.switch(0, 'ac', 1)
-            self.new_card.md_bg_color = app.on_green if self.new_card.md_bg_color == app.off_red else app.off_red 
+            color = self.new_card.md_bg_color
+            if color == app.off_red:
+                app.switch(0, 'ac', 1)
+                self.new_card.md_bg_color = self.image_box.md_bg_color = app.on_green
+            else:
+                app.switch(0, 'ac', 0)
+                self.new_card.md_bg_color = self.image_box.md_bg_color = app.off_red
         self.timer = 0
 
     def button_change(self, btn, *args):
