@@ -17,7 +17,6 @@ from kivy.uix.screenmanager import ScreenManager
 from kivy.uix.image import Image
 from kivy.config import Config
 from kivy.uix.popup import Popup
-from kivy.clock import Clock
 from functools import partial
 import paho.mqtt.client as mqtt
 from time import time
@@ -32,6 +31,11 @@ password = "random.random()"
 
 class cardButton(MDCard, Button):
     pass
+
+
+class AcFeatures(MDGridLayout):
+    pass
+        
 
 
 class Room(MDBoxLayout):
@@ -74,69 +78,13 @@ class Room(MDBoxLayout):
         screen_layout.add_widget(new_layout)
 
         
-        popup_layout = MDGridLayout()
-
-        # AC image
-        self.image_box = MDBoxLayout(orientation='vertical')
-        popup_layout.cols = 1
-        ac_image1 = Image(
-            source='static/ac1.png',
-            size_hint=(0.9, 0.9),
-        )
-        ac_image1.pos_hint = {'top' : 1}
-        self.image_box.size_hint = (0.5, 0.5)
-        self.image_box.add_widget(ac_image1)
-        self.image_box.add_widget(MDLabel(text='18ºC'))
-        popup_layout.add_widget(self.image_box)
-
-
-        # all the features for ac
-        features_layout = MDGridLayout()
-        features_layout.cols = 2
-
-        # Temp incease, decrease
-        new_box_layout = MDFloatLayout()
-        dec_button = MDCard(
-            orientation='vertical',
-            padding='10dp',
-            pos_hint={'center_x': 0.5, 'center_y': 0.5},
-            size_hint=(0.75, 0.75),
-        )
-        dec_button.id = 'temp-'
-        dec_button.md_bg_color = [i / 255 for i in [136, 199, 220]] + [1]
-        dec_button.add_widget(MDLabel(text='Temp-'))
-        new_box_layout.add_widget(dec_button)
-        dec_button.on_press = partial(self.ac_features_send, dec_button)
-        features_layout.add_widget(new_box_layout)
-        
-        new_box_layout = MDFloatLayout()
-        inc_button = MDCard(
-            orientation='vertical',
-            padding='10dp',
-            pos_hint={'center_x': 0.5, 'center_y': 0.5},
-            size_hint=(0.75, 0.75),
-        )
-        inc_button.md_bg_color = [i / 255 for i in [246, 205, 139]] + [1]
-        inc_button.add_widget(MDLabel(text='Temp+'))
-        inc_button.id = 'temp+'
-        inc_button.on_press = partial(self.ac_features_send, inc_button)
-        new_box_layout.add_widget(inc_button)
-        features_layout.add_widget(new_box_layout)
-
-        #-----------------#
-        features_layout.add_widget(Button(text='TODO'))
-        features_layout.add_widget(Button(text='TODO'))
-        features_layout.add_widget(Button(text='TODO'))
-        features_layout.add_widget(Button(text='TODO'))
-        
-        popup_layout.add_widget(features_layout)
         self.ac_popup = Popup(
             title = 'AC settings',
-            size_hint = (.75, .75)
+            content=AcFeatures(),
+            size_hint = (0.75, 0.75)
         )
-        self.ac_popup.content = popup_layout
         self.ac_popup.background_color = [i / 255 for i in [137, 205, 211]] + [1]
-        self.ac_popup.on_open = self.faltu
+        #self.ac_popup.on_open = self.faltu
 
         #--------------------------------------------------------------#
 
@@ -192,11 +140,6 @@ class Room(MDBoxLayout):
             btn.background_color = [0, 0, 0, 1]
             btn.color = [1, 1, 1, 1]
     
-    def ac_features_send(self, feature):
-        self.button_behaviour(feature, feature.md_bg_color, 0)
-        if feature.id.startswith('temp'):
-            app.switch(0, 'ac', feature.id[-1])
-    
     def light_change(self, *args):
         if self.light_card.md_bg_color == app.dark_color:
             self.light_card.md_bg_color = app.light_color
@@ -204,13 +147,8 @@ class Room(MDBoxLayout):
             self.light_card.md_bg_color = app.dark_color
         app.switch(0, 'light')
 
-    def button_behaviour(self, button, color, state, time=None):
-        temp = color.copy()
-        if not state:
-            Clock.schedule_once(partial(self.button_behaviour, button, temp, 1), 0.05)
-            button.md_bg_color = [0.5, 0.5, 0.5, 1]
-        else:
-            button.md_bg_color = color
+    def button_behaviour(self, button, state):
+        pass
 
 # Main box layout inside which everthing is present
 class MainScreen(MDBoxLayout):

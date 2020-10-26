@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test</title>
+</head>
+<body>
+    <h1 style="text-align: center; color: aqua;">Reed and Thermal Test</h1>
+
+    <p style="text-align: center;"><span style="font-size: x-large;">Reed:</span> <var style="font-size: x-large; color: green;" id='reed'>True</var></p>
+    <p id="thermal" style="text-align: center; display: none;"><span style="font-size: x-large; color: red;">Motion detected!</span></p>
+    <p id="thermal_active" style="text-align: center; display: none;"><span style="font-size: x-large; color: grey;">Motion Sensor Inactive!</span></p>
+    <p><var id="thermal_value"></var></p>
+    <script>
+        var reed = document.getElementById('reed');
+        var thermal = document.getElementById('thermal');
+        var thermal_active = document.getElementById('thermal_active');
+        function update_info() {
+            $.get('/update_info', (data) => {
+                if (data.reed) {
+                    reed.style.color = "green";
+                    reed.innerText = "True";
+                }
+                else {
+                    reed.style.color = "red";
+                    reed.innerText = "False";
+                }
+                if (data.thermal_active)
+                {
+                    thermal_active.style.display = "none";
+                    if (data.thermal) {
+                        thermal.style.display = "";
+                    }
+                    else
+                    {
+                        thermal.style.display = "none";
+                    }
+                }
+                else {
+                    thermal_active.style.display = "";
+                }
+            });
+        }
+    setInterval(update_info, 100);
+    </script>
+
+</body>
+</html>
