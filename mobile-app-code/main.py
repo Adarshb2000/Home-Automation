@@ -27,8 +27,8 @@ Config.set('graphics', 'resizable', True)
 
 
 # Variables
-username = "root_system0"
-password = "random.random()"
+username = "username"
+password = "password"
 
 
 class AcCard(MDCard):
