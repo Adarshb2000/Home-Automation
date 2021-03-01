@@ -5,8 +5,8 @@
 #include <IRsend.h>
 
 // WiFi Configs
-const char *ssid = "Orange 24G";
-const char *pass = "9827845700";
+const char *ssid = "WIFI SSID";
+const char *pass = "WIFI Password";
 const char *device_name = "Room0";
 IPAddress staticIP(192, 168, 29, 89);
 IPAddress gateway(192, 168, 29, 1);
@@ -14,10 +14,10 @@ IPAddress subnet(255, 255, 255, 0);
 IPAddress dns(8, 8, 4, 4);
 
 // MQTT Server configs
-const char *mqttServer = "192.168.29.148";
+const char *mqttServer = "mqtt server ip";
 const int mqttPort = 1883;
-const char *mqttUser = "root_system0";
-const char *mqttPassword = "random.random()";
+const char *mqttUser = "userid";
+const char *mqttPassword = "password";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
