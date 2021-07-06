@@ -22,6 +22,8 @@ from kivy.clock import Clock
 from functools import partial
 import paho.mqtt.client as mqtt
 from time import time
+from helper import AcPopup, AcCard, colors
+
 
 Config.set('graphics', 'resizable', True)
 
@@ -31,20 +33,6 @@ username = "root_system0"
 password = "random.random()"
 
 
-class AcCard(MDCard):
-    def __init__(self, size, **kwargs):
-        super().__init__(**kwargs)
-        self.orientation = 'vertical'
-        self.padding = '5dp'
-        self.pos_hint = {'center_x' : 0.5, 'center_y' : 0.5}
-        self.size_hint = size
-        self.radius = [4] * 4
-        self.md_bg_color = app.off_red
-
-        self.build()
-
-    def build(self):
-        self.add_widget(Image(source='static/ac1.png'))
 
 
 class Room(MDBoxLayout):
@@ -59,79 +47,29 @@ class Room(MDBoxLayout):
 
         # AC region
         self.timer = 0
+
+        # AC Card
         new_layout = MDFloatLayout()
-        self.new_card = AcCard((0.75, 0.75))
-
-        # Details
-        details_box = MDGridLayout(size_hint_y = 0.25)
-        details_box.cols = 1
-        self.temperature_label = MDLabel(text='18°C', pos_hint={'center_x' : 0.5})
-        self.temperature_label.font_size = 20
-        self.temperature_label.size = (0.25, 1)
-        self.temperature_label.color = [1, 1, 1, 1]
-        details_box.add_widget(self.temperature_label)
-        self.new_card.add_widget(details_box)
-
-        self.new_card.on_press = self.ac_touch_down
-        self.new_card.on_release = self.ac_touch_up
-        new_layout.add_widget(self.new_card)
+        self.ac_card1 = AcCard((0.75, 0.75))
+        self.ac_card1.on_press = self.ac_touch_down
+        self.ac_card1.on_release = self.ac_touch_up
+        new_layout.add_widget(self.ac_card1)
         screen_layout.add_widget(new_layout)
 
-        # AC POPUP
-        #--------------------------------#
-        popup_layout = MDGridLayout()
-        popup_layout.cols = 1
 
         
-        self.image_box = AcCard((0.5, 0.5))
-        popup_layout.add_widget(self.image_box)
 
 
-        # all the features for ac
-        features_layout = MDGridLayout()
-        features_layout.cols = 2
-
-        # Temp incease, decrease
-        new_box_layout = MDFloatLayout()
-        dec_button = MDCard(
-            orientation='vertical',
-            padding='5dp',
-            pos_hint={'center_x': 0.5, 'center_y': 0.5},
-            size_hint=(0.75, 0.75),
-        )
-        dec_button.id = 'temp-'
-        dec_button.md_bg_color = [i / 255 for i in [136, 199, 220]] + [1]
-        dec_button.add_widget(MDLabel(text='Temp-'))
-        new_box_layout.add_widget(dec_button)
-        dec_button.on_press = partial(self.ac_features_send, dec_button)
-        features_layout.add_widget(new_box_layout)
         
-        new_box_layout = MDFloatLayout()
-        inc_button = MDCard(
-            orientation='vertical',
-            padding='10dp',
-            pos_hint={'center_x': 0.5, 'center_y': 0.5},
-            size_hint=(0.75, 0.75),
-        )
-        inc_button.md_bg_color = [i / 255 for i in [246, 205, 139]] + [1]
-        inc_button.add_widget(MDLabel(text='Temp+'))
-        inc_button.id = 'temp+'
-        inc_button.on_press = partial(self.ac_features_send, inc_button)
-        new_box_layout.add_widget(inc_button)
-        features_layout.add_widget(new_box_layout)
 
-        #-----------------#
-        features_layout.add_widget(Button(text='TODO'))
-        features_layout.add_widget(Button(text='TODO'))
-        features_layout.add_widget(Button(text='TODO'))
-        features_layout.add_widget(Button(text='TODO'))
+        self.content = AcPopup()
+        self.content.ac_card.on_release = partial(self.ac_touch_up, popup = True)
         
-        popup_layout.add_widget(features_layout)
         self.ac_popup = Popup(
             title = 'AC settings',
             size_hint = (.75, .75)
         )
-        self.ac_popup.content = popup_layout
+        self.ac_popup.content = self.content
         self.ac_popup.background_color = [i / 255 for i in [137, 205, 211]] + [1]
 
         #--------------------------------------------------------------#
@@ -173,13 +111,13 @@ class Room(MDBoxLayout):
         if (time() - self.timer > 0.5) and not popup:
             self.ac_popup.open()
         else:
-            color = self.new_card.md_bg_color
+            color = self.ac_card1.md_bg_color
             if color == app.off_red:
                 app.switch(0, 'ac', 1)
-                self.new_card.md_bg_color = self.image_box.md_bg_color = app.on_green
+                self.ac_card1.md_bg_color = self.content.ac_card.md_bg_color = app.on_green
             else:
                 app.switch(0, 'ac', 0)
-                self.new_card.md_bg_color = self.image_box.md_bg_color = app.off_red
+                self.ac_card1.md_bg_color = self.content.ac_card.md_bg_color = app.off_red
         self.timer = 0
 
     def button_change(self, btn, *args):
@@ -190,10 +128,7 @@ class Room(MDBoxLayout):
             btn.background_color = [0, 0, 0, 1]
             btn.color = [1, 1, 1, 1]
     
-    def ac_features_send(self, feature):
-        self.button_behaviour(feature, feature.md_bg_color, 0)
-        if feature.id.startswith('temp'):
-            app.switch(0, 'ac', feature.id[-1])
+    
     
     def light_change(self, *args):
         if self.light_card.md_bg_color == app.dark_color:
@@ -202,13 +137,7 @@ class Room(MDBoxLayout):
             self.light_card.md_bg_color = app.dark_color
         app.switch(0, 'light')
 
-    def button_behaviour(self, button, color, state, time=None):
-        temp = color.copy()
-        if not state:
-            Clock.schedule_once(partial(self.button_behaviour, button, temp, 1), 0.05)
-            button.md_bg_color = [0.5, 0.5, 0.5, 1]
-        else:
-            button.md_bg_color = color
+
 
 # Main box layout inside which everthing is present
 class MainScreen(MDBoxLayout):
@@ -253,10 +182,10 @@ class RoomApp(MDApp):
         self.theme_cls.primary_palette = 'Green'
 
         # Colors
-        self.dark_color = [i / 255 for i in [50] * 3] + [1]
-        self.light_color = [i / 255 for i in [240, 240, 240]] + [1]
-        self.on_green = [i / 255 for i in [46, 139, 87]] + [1]
-        self.off_red = [i / 255 for i in [220, 20, 60]] + [0.99]
+        self.dark_color = colors['dark_color']
+        self.light_color = colors['light_color']
+        self.on_green = colors['on_green']
+        self.off_red = colors['off_red']
 
 
         # Connection to home server
